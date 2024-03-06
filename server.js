@@ -5,12 +5,10 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const { swaggerSpec, swaggerUi } = require("./swagger");
 const fs = require("fs");
-const morgan = require("morgan")
 
 const app = express();
 dotenv.config();
 
-app.use(morgan("dev")); 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -242,10 +240,11 @@ app.post("/register", async (req, res) => {
   // }
 
   // Insert the user into the database
-  const query = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+  const query =
+    "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
   const values = [username, email, password];
 
-  db.query(query, values,  (err, result) => {
+  db.query(query, values, (err, result) => {
     if (err) {
       console.error("เกิดข้อผิดพลาดในการลงทะเบียน:", err);
       return res.status(500).json({ message: "เกิดข้อผิดพลาดในการลงทะเบียน" });
@@ -266,7 +265,6 @@ app.get("/users", (req, res) => {
     }
   });
 });
-
 
 app.listen(process.env.PORT, () => {
   console.log("Example app listening on port " + process.env.PORT);
