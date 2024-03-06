@@ -20,7 +20,7 @@ const db = mysql.createConnection({
   database: process.env.DB_DATABASE,
   port: process.env.DB_PORT,
   ssl: {
-    ca: fs.readFileSync(process.env.DB_SSL_CA_PATH),
+    ca: fs.readFileSync("DigiCertGlobalRootCA.crt.pem"),
   },
 });
 
@@ -42,6 +42,10 @@ db.connect((err) => {
  */
 
 app.get("/", (req, res) => {
+  res.send("Hello World!");
+})
+
+app.get("/videos", (req, res) => {
   const query = `
     SELECT vl.video_id, vl.title, vl.video_url, vl.thumbnail_url, vl.created_at,
             c.channel_id, c.name, c.profile_picture_url, 
