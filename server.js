@@ -5,10 +5,12 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const { swaggerSpec, swaggerUi } = require("./swagger");
 const fs = require("fs");
+const morgan = require("morgan")
 
 const app = express();
 dotenv.config();
 
+app.use(morgan("dev")); 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -20,7 +22,7 @@ const db = mysql.createConnection({
   database: process.env.DB_DATABASE,
   port: process.env.DB_PORT,
   ssl: {
-    ca: fs.readFileSync("DigiCertGlobalRootCA.crt.pem"),
+    ca: fs.readFileSync(process.env.DB_SSL_CA_PATH),
   },
 });
 
@@ -43,10 +45,10 @@ db.connect((err) => {
 
 app.get("/", (req, res) => {
   const query = `
-    SELECT vl.video_id, vl.video_title, vl.video_url, vl.video_thumbnail, vl.video_created_at,
-            c.channel_id, c.channel_name, c.channel_profile_picture, 
+    SELECT vl.video_id, vl.title, vl.video_url, vl.thumbnail_url, vl.created_at,
+            c.channel_id, c.name, c.profile_picture_url, 
             p.view_count
-    FROM videos_long vl
+    FROM videos vl
     JOIN channels c ON vl.channel_id = c.channel_id
     JOIN popular p ON vl.video_id = p.video_id
     `;
@@ -148,7 +150,7 @@ app.get("/result", (req, res) => {
       SELECT vl.video_id, vl.video_title, vl.video_created_at, vl.video_thumbnail,
              c.channel_name, c.channel_profile_picture,
              p.view_count
-      FROM videos_long vl
+      FROM videos vl
       JOIN channels c ON vl.channel_id = c.channel_id
       JOIN popular p ON vl.video_id = p.video_id
       WHERE vl.video_title LIKE ? OR c.channel_name LIKE ?;
@@ -209,7 +211,7 @@ app.get("/watch", (req, res) => {
           WHERE cm.video_id = vl.video_id
         ) AS comments
         
-      FROM videos_long vl
+      FROM videos vl
       JOIN channels c ON vl.channel_id = c.channel_id
       JOIN popular p ON vl.video_id = p.video_id
       WHERE vl.video_id = ?;
@@ -231,6 +233,41 @@ app.get("/watch", (req, res) => {
   });
 });
 
-app.listen(8080, () => {
-  console.log("Example app listening on port 8080!");
+app.post("/register", async (req, res) => {
+  const { username, email, password } = await req.body;
+
+  // // Check if all required fields are provided
+  // if (!username || !email || !password) {
+  //   return res.status(400).json({ message: "กรุณาระบุชื่อผู้ใช้, อีเมล, และรหัสผ่าน" });
+  // }
+
+  // Insert the user into the database
+  const query = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+  const values = [username, email, password];
+
+  db.query(query, values,  (err, result) => {
+    if (err) {
+      console.error("เกิดข้อผิดพลาดในการลงทะเบียน:", err);
+      return res.status(500).json({ message: "เกิดข้อผิดพลาดในการลงทะเบียน" });
+    }
+    console.log("User registered successfully");
+    res.status(200).json({ message: "ลงทะเบียนสำเร็จ" });
+  });
+});
+
+app.get("/users", (req, res) => {
+  const query = "SELECT * FROM users";
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", err);
+      res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
+    } else {
+      res.json(result);
+    }
+  });
+});
+
+
+app.listen(process.env.PORT, () => {
+  console.log("Example app listening on port " + process.env.PORT);
 });

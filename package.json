@@ -16,5 +16,8 @@
     "mysql2": "^3.7.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0"
   }
 }
